@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Check Delivery Distance</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    input { width: 300px; padding: 8px; font-size: 16px; }
+    button { padding: 8px 16px; font-size: 16px; margin-left: 10px; }
+    #message { margin-top: 15px; color: #d33; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <h1>Check Delivery Distance</h1>
+  <input id="address" placeholder="Enter your address" type="text" autocomplete="off" />
+  <button onclick="checkDistance()">Check Distance</button>
+  <div id="message"></div>
+
+  <script>
+    let autocomplete;
+    let selectedPlace = null;
+    const originAddress = "8908 Smokey Drive, Plano, TX 75025";
+    const maxDistanceMeters = 16093; // 10 miles
+    const messageDiv = document.getElementById('message');
+
+    function initAutocomplete() {
+      const input = document.getElementById("address");
+      autocomplete = new google.maps.places.Autocomplete(input, { types: ['address'] });
+      autocomplete.addListener('place_changed', () => {
+        selectedPlace = autocomplete.getPlace();
+        if (!selectedPlace.geometry) {
+          selectedPlace = null;
+          messageDiv.textContent = "Please select an address from the dropdown.";
+        } else {
+          messageDiv.textContent = "";
+        }
+      });
+    }
+
+    function checkDistance() {
+      if (!selectedPlace) {
+        alert("Please select a valid address from the dropdown.");
+        return;
+      }
+
+      const destination = selectedPlace.formatted_address;
+      const service = new google.maps.DistanceMatrixService();
+      service.getDistanceMatrix(
+        {
+          origins: [originAddress],
+          destinations: [destination],
+          travelMode: 'DRIVING',
+        },
+        (response, status) => {
+          if (status !== 'OK') {
+            alert('Error with distance matrix: ' + status);
+            return;
+          }
+          const element = response.rows[0].elements[0];
+          if (element.status !== 'OK') {
+            alert('Could not calculate distance to this address.');
+            return;
+          }
+
+          const distanceMeters = element.distance.value;
+          if (distanceMeters <= maxDistanceMeters) {
+            messageDiv.style.color = 'green';
+            messageDiv.textContent = "Address is within delivery area!";
+          } else {
+            messageDiv.style.color = 'red';
+            messageDiv.textContent = "Sorry, address is outside our delivery area.";
+          }
+        }
+      );
+    }
+  </script>
+
+  <script
+    async
+    defer
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAV0P1ms-rtH_nEFDST5EB0WpbZCw4dESA&libraries=places&callback=initAutocomplete"
+  ></script>
+</body>
+</html>
