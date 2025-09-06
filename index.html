@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Delivery Address Form</title>
+  <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&libraries=places"></script>
+  <script>
+    let autocomplete;
+    let deliveryOrigin = { lat: 40.712776, lng: -74.005974 }; // New York, example
+
+    function initAutocomplete() {
+      autocomplete = new google.maps.places.Autocomplete(
+        document.getElementById('address'),
+        { types: ['address'] }
+      );
+      autocomplete.addListener('place_changed', onPlaceChanged);
+    }
+
+    function onPlaceChanged() {
+      const place = autocomplete.getPlace();
+      if (!place.geometry) {
+        alert("Please select a valid address.");
+        return;
+      }
+      const destination = place.geometry.location;
+      checkDistance(destination);
+    }
+
+    function checkDistance(destination) {
+      const service = new google.maps.DistanceMatrixService();
+      service.getDistanceMatrix(
+        {
+          origins: [deliveryOrigin],
+          destinations: [destination],
+          travelMode: 'DRIVING',
+        },
+        function (response, status) {
+          if (status !== 'OK') {
+            alert('Error with distance matrix');
+            return;
+          }
+
+          const result = response.rows[0].elements[0];
+          const distanceInMeters = result.distance.value;
+          const maxDistance = 16093; // 10 miles in meters
+
+          if (distanceInMeters <= maxDistance) {
+            alert("Address is within delivery range.");
+          } else {
+            alert("Sorry, this address is outside our delivery area.");
+          }
+        }
+      );
+    }
+  </script>
+</head>
+<body onload="initAutocomplete()">
+  <h2>Enter Your Address</h2>
+  <input id="address" type="text" placeholder="123 Main St" style="width: 300px;" />
+  <button onclick="onPlaceChanged()">Check Delivery</button>
+</body>
+</html>
